@@ -6,10 +6,12 @@ import (
 	"log"
 	"fmt"
 	"github.com/lpxxn/gowebchat/utils"
+	"path/filepath"
 )
 
 func Init() {
-	utils.Root, _ = os.Getwd()
+	utils.RootPath, _ = os.Getwd()
+	utils.ImgPath = filepath.Join(utils.RootPath, "img")
 }
 
 func main() {

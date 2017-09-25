@@ -3,6 +3,7 @@ package utils
 import (
 	"math/rand"
 	"time"
+	"os"
 )
 
 /*
@@ -24,4 +25,23 @@ func RandomString(prefix string, n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return prefix + string(b)
+}
+
+
+func CreateFile(name string, data []byte, isAppend bool) error {
+	flag := os.O_CREATE | os.O_WRONLY
+	if isAppend {
+		flag |= os.O_APPEND
+	} else {
+		flag |= os.O_TRUNC
+	}
+
+	file, err := os.OpenFile(name, flag, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+	_, err = file.Write(data)
+	return err
 }

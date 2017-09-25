@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 	"log"
+	"path/filepath"
 )
 
 type WeChat struct {
@@ -86,4 +87,35 @@ func (weChat *WeChat) GetUuid() error {
 		return err
 	}
 	return nil
+}
+
+
+func (weChat *WeChat) QrCode() error {
+	if weChat.Uuid == "" {
+		return errors.New("Uuid is empty")
+	}
+	var qrUrl = "https://login.weixin.qq.com/qrcode/" + weChat.Uuid
+
+	req, err := http.NewRequest("GET", qrUrl, nil)
+	if err != nil {
+		weChat.Log.Fatalln(err)
+		return err
+	}
+
+	resp, err := weChat.Client.Do(req)
+	if err != nil {
+		weChat.Log.Fatalln(err)
+		return err
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		weChat.Log.Fatalln(err)
+		return err
+	}
+	name := utils.RandomString("qr", 5) + ".jpg"
+	pathb := filepath.Join(utils.ImgPath, name)
+	fmt.Println(pathb)
+	return utils.CreateFile(pathb, data, true)
 }

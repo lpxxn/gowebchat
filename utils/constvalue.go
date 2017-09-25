@@ -15,4 +15,5 @@ var (
 	CurrentTimeStep = MakeTimeStame()
 )
 
-var Root string
+var RootPath string
+var ImgPath string

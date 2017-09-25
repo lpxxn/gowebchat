@@ -1,14 +1,14 @@
 package utils
 
 import (
-	"time"
 	"math/rand"
+	"time"
 )
 
 /*
 	Nano to Milliscond
 
- */
+*/
 func MakeTimeStame() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
@@ -16,8 +16,8 @@ func MakeTimeStame() int64 {
 /*
 	随机字符串
 	eg. RandomString("e", 15)
- */
-func RandomString(prefix string, n  int) string {
+*/
+func RandomString(prefix string, n int) string {
 	letterRunes := []rune("123456789")
 	b := make([]rune, n)
 	for i := range b {
@@ -25,4 +25,3 @@ func RandomString(prefix string, n  int) string {
 	}
 	return prefix + string(b)
 }
-

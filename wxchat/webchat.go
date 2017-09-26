@@ -6,13 +6,14 @@ import (
 	"github.com/lpxxn/gowebchat/utils"
 	"github.com/pkg/errors"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
-	"log"
-	"path/filepath"
+	"encoding/xml"
 )
 
 type WeChat struct {
@@ -20,9 +21,9 @@ type WeChat struct {
 	TimeStamp string
 	DeviceId  string
 	Client    *http.Client
-	Log *log.Logger
+	Log       *log.Logger
 	// 扫码登录返回数据
-	Code string
+	Code        string
 	RedirectUri string
 }
 
@@ -94,7 +95,7 @@ func (weChat *WeChat) GetUuid() error {
 
 /*
 	得到QR图片
- */
+*/
 func (weChat *WeChat) QrCode() error {
 	if weChat.Uuid == "" {
 		return errors.New("Uuid is empty")
@@ -126,7 +127,7 @@ func (weChat *WeChat) QrCode() error {
 	return utils.CreateFile(pathb, data, true)
 }
 
-func (w *WeChat) ScanQrAndLogin() (code string, err error){
+func (w *WeChat) ScanQrAndLogin() (code string, err error) {
 	timeStep := strconv.FormatInt(utils.MakeTimeStame(), 10)
 	loginUrl := fmt.Sprintf("%s?loginicon=false&uuid=%s&tip=0&_=%s", utils.ScanORLogin, w.Uuid, timeStep)
 	fmt.Println(loginUrl)
@@ -144,7 +145,7 @@ func (w *WeChat) ScanQrAndLogin() (code string, err error){
 	fss := regCode.FindStringSubmatch(strData)
 	if len(fss) > 0 {
 		code = fss[1]
-	} else{
+	} else {
 		err = errors.New("no code")
 		return
 	}
@@ -168,5 +169,28 @@ func (w *WeChat) ScanQrAndLogin() (code string, err error){
 		err = errors.New("unknown error cede is " + code)
 
 	}
+	return
+}
+
+func (w *WeChat) NewLoginPage() (err error) {
+	if w.RedirectUri == "" {
+		err = errors.New("please get RedirectUri")
+		return
+	}
+	resp, err := w.Client.Get(w.RedirectUri)
+	if err != nil {
+		return
+	}
+	defer  resp.Body.Close()
+
+	data, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(data))
+	wxnewReq := new(WebWxNewLoginPageResponse)
+	err = xml.Unmarshal(data, wxnewReq)
+	if err != nil {
+		fmt.Println("xml Unmarshal error")
+		return
+	}
+
 	return
 }

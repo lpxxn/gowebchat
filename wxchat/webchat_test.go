@@ -37,5 +37,5 @@ func TestUuid(t *testing.T) {
 		}
 		fmt.Println("scaning Qr")
 	}
-
+	chat.NewLoginPage()
 }

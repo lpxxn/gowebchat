@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 )
 
+func Init() {
+
+}
 /*
 	Nano to Milliscond
 
@@ -20,6 +23,7 @@ func MakeTimeStame() int64 {
 	eg. RandomString("e", 15)
 */
 func RandomString(prefix string, n int) string {
+	rand.Seed(time.Now().UnixNano())
 	letterRunes := []rune("123456789")
 	b := make([]rune, n)
 	for i := range b {

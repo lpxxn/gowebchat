@@ -21,6 +21,9 @@ type WeChat struct {
 	DeviceId  string
 	Client    *http.Client
 	Log *log.Logger
+	// 扫码登录返回数据
+	Code string
+	RedirectUri string
 }
 
 func NewWeChat(logger *log.Logger) (*WeChat, error) {
@@ -89,12 +92,15 @@ func (weChat *WeChat) GetUuid() error {
 	return nil
 }
 
-
+/*
+	得到QR图片
+ */
 func (weChat *WeChat) QrCode() error {
 	if weChat.Uuid == "" {
 		return errors.New("Uuid is empty")
 	}
-	var qrUrl = utils.LoginQr + weChat.Uuid
+	utils.RemoveAllInDir(utils.ImgPath)
+	var qrUrl = utils.LoginQRImg + weChat.Uuid
 
 	req, err := http.NewRequest("GET", qrUrl, nil)
 	if err != nil {
@@ -118,4 +124,49 @@ func (weChat *WeChat) QrCode() error {
 	pathb := filepath.Join(utils.ImgPath, name)
 	fmt.Println(pathb)
 	return utils.CreateFile(pathb, data, true)
+}
+
+func (w *WeChat) ScanQrAndLogin() (code string, err error){
+	timeStep := strconv.FormatInt(utils.MakeTimeStame(), 10)
+	loginUrl := fmt.Sprintf("%s?loginicon=false&uuid=%s&tip=0&_=%s", utils.ScanORLogin, w.Uuid, timeStep)
+	fmt.Println(loginUrl)
+	resp, err := w.Client.Get(loginUrl)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+	strData := string(data)
+	regCode := regexp.MustCompile(`window.code=(\d+)`)
+	fss := regCode.FindStringSubmatch(strData)
+	if len(fss) > 0 {
+		code = fss[1]
+	} else{
+		err = errors.New("no code")
+		return
+	}
+
+	switch code {
+	case "201":
+		fmt.Println("login use phone")
+	case "200":
+		regUrl := regexp.MustCompile(`window.redirect_uri="([\s\S]*)"`)
+		fssUrl := regUrl.FindStringSubmatch(strData)
+		if len(fssUrl) > 0 {
+			w.RedirectUri = fmt.Sprintf("%s&fun=new", fssUrl[1])
+			fmt.Println(w.RedirectUri)
+		} else {
+			err = errors.New("can not find Redirect Uil")
+			return
+		}
+	case "408":
+		fmt.Println("time out rerequest")
+	default:
+		err = errors.New("unknown error cede is " + code)
+
+	}
+	return
 }

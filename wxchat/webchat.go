@@ -94,7 +94,7 @@ func (weChat *WeChat) QrCode() error {
 	if weChat.Uuid == "" {
 		return errors.New("Uuid is empty")
 	}
-	var qrUrl = "https://login.weixin.qq.com/qrcode/" + weChat.Uuid
+	var qrUrl = utils.LoginQr + weChat.Uuid
 
 	req, err := http.NewRequest("GET", qrUrl, nil)
 	if err != nil {

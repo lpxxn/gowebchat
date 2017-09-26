@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"time"
 	"os"
+	"path/filepath"
 )
 
 /*
@@ -27,7 +28,9 @@ func RandomString(prefix string, n int) string {
 	return prefix + string(b)
 }
 
-
+/*
+	create a file
+ */
 func CreateFile(name string, data []byte, isAppend bool) error {
 	flag := os.O_CREATE | os.O_WRONLY
 	if isAppend {
@@ -44,4 +47,26 @@ func CreateFile(name string, data []byte, isAppend bool) error {
 	defer file.Close()
 	_, err = file.Write(data)
 	return err
+}
+
+/*
+	remover all contents of a directory
+ */
+func RemoveAllInDir(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	names , err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(dir, name))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

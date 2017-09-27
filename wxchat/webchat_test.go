@@ -10,7 +10,6 @@ import (
 
 /*
 
-
  */
 func TestUuid(t *testing.T) {
 	utils.RootPath, _ = os.Getwd()

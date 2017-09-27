@@ -14,6 +14,9 @@ import (
 	"strconv"
 	"time"
 	"encoding/xml"
+	"encoding/json"
+	"io"
+	"bytes"
 )
 
 type WeChat struct {
@@ -25,6 +28,8 @@ type WeChat struct {
 	// 扫码登录返回数据
 	Code        string
 	RedirectUri string
+	LoginPageModel *WebWxNewLoginPageResponse
+	WebWxInitModel *WebWxInit
 }
 
 func NewWeChat(logger *log.Logger) (*WeChat, error) {
@@ -48,6 +53,8 @@ func NewWeChat(logger *log.Logger) (*WeChat, error) {
 			Timeout:   transport.ResponseHeaderTimeout,
 		},
 		Log: logger,
+		LoginPageModel: &WebWxNewLoginPageResponse{},
+		WebWxInitModel: & WebWxInit{},
 	}, nil
 }
 
@@ -191,6 +198,39 @@ func (w *WeChat) NewLoginPage() (err error) {
 		fmt.Println("xml Unmarshal error")
 		return
 	}
+	w.LoginPageModel = wxnewReq
+
+	w.WebWxInitModel.BaseRequest.Sid = wxnewReq.Wxsid
+	w.WebWxInitModel.BaseRequest.Skey = wxnewReq.Skey
+	w.WebWxInitModel.BaseRequest.Uin = wxnewReq.Wxuin
+	w.WebWxInitModel.BaseRequest.DeviceID = w.DeviceId
+
+	baseRequestJson, err := json.Marshal(w.WebWxInitModel)
+	fmt.Println("json", string(baseRequestJson), " err :", err)
+
+	initUrl :=  fmt.Sprintf("%s?r=%d&lang=zh_CN&pass_ticket=%s", utils.WebWxInitUrl, utils.MakeTimeStame(), wxnewReq.PassTicket)
+	fmt.Println("initUrl :", initUrl)
+
+	w.PostUrl(initUrl, bytes.NewReader(baseRequestJson))
+
 
 	return
+}
+
+func (w * WeChat) PostUrl(url string, body io.Reader) {
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return
+	}
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	resp, err := w.Client.Do(req)
+	if err != nil {
+		fmt.Printf("post url error, Url = %s, error= %v", url, err)
+		return
+	}
+	defer resp.Body.Close()
+	data, _ := ioutil.ReadAll(resp.Body)
+	fmt.Printf("response data : %s", string(data))
+
+
 }

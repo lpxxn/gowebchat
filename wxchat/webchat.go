@@ -211,26 +211,75 @@ func (w *WeChat) NewLoginPage() (err error) {
 	initUrl :=  fmt.Sprintf("%s?r=%d&lang=zh_CN&pass_ticket=%s", utils.WebWxInitUrl, utils.MakeTimeStame(), wxnewReq.PassTicket)
 	fmt.Println("initUrl :", initUrl)
 
-	w.PostUrl(initUrl, bytes.NewReader(baseRequestJson))
+	initData := w.PostUrl(initUrl, bytes.NewReader(baseRequestJson))
+	initModel :=  &WxInitModel{}
+	json.Unmarshal(initData, initModel)
 
+	///
+	url := "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?r=" + strconv.FormatInt(utils.MakeTimeStame(), 10)
+	userlistbytes := w.PostUrl(url, nil)
+	userList := &UserList{}
+	json.Unmarshal(userlistbytes, userList)
 
+	var findId string
+	for _, item := range userList.MemberList {
+		if item.RemarkName == "郭雪" {
+		//if item.RemarkName == "小胖123" {
+			findId = item.UserName
+			break;
+		}
+	}
+
+	sendUrl := fmt.Sprintf("%s?lang=zh_CN&pass_ticket=%s", utils.SendMsgUrl, wxnewReq.PassTicket)
+	fmt.Println("sendMsgUrl :", sendUrl)
+ 	id := strconv.FormatInt(time.Now().UnixNano(), 10)
+	fmt.Println(id)
+	sendMsg := SendMsgData{
+		BaseRequest:w.WebWxInitModel.BaseRequest,
+		Msg: MsgModel{
+			ClientMsgID: id,
+			Content: "test 你好，去屎吧~~~~",
+			FromUserName: initModel.User.UserName,
+			LocalID: id,
+			ToUserName: findId,
+			Type: 1,
+		},
+		Scene: 0,
+	}
+	fmt.Println("sendMsg:", sendMsg)
+	sendJson, err := json.Marshal(sendMsg)
+	fmt.Println(sendJson)
+	if err != nil {
+		fmt.Println("Marshal Send Json error", err.Error())
+		return
+	}
+
+	if err != nil {
+		w.Log.Printf("json.Marshal(%v):%v\n", sendJson, err)
+	}
+
+	w.PostUrl(sendUrl, bytes.NewReader(sendJson))
 	return
 }
 
-func (w * WeChat) PostUrl(url string, body io.Reader) {
+func (w * WeChat) PostUrl(url string, body io.Reader) []byte {
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
-		return
+		return nil
 	}
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	resp, err := w.Client.Do(req)
 	if err != nil {
 		fmt.Printf("post url error, Url = %s, error= %v", url, err)
-		return
+		return nil
 	}
 	defer resp.Body.Close()
 	data, _ := ioutil.ReadAll(resp.Body)
 	fmt.Printf("response data : %s", string(data))
+	return data
 
+}
+
+func (w *WeChat) SendMsg()  {
 
 }

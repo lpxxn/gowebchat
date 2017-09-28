@@ -143,6 +143,8 @@ func (w *WeChat) ScanQrAndLogin() (code string, err error) {
 		return
 	}
 	defer resp.Body.Close()
+
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return
